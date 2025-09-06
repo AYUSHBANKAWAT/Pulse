@@ -20,7 +20,13 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="article/[id]" options={{ presentation: 'modal', title: 'Article' }} />
+        <Stack.Screen name="article/write" options={{ presentation: 'modal', title: 'Write Article' }} />
+        <Stack.Screen name="my-articles" options={{ presentation: 'modal', title: 'My Articles' }} />
+        <Stack.Screen name="give-kudos" options={{ presentation: 'modal', title: 'Give Kudos' }} />
+        <Stack.Screen name="create-survey" options={{ presentation: 'modal', title: 'Create Survey' }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
