@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.anonymous.PULS</string>
+	<string>com.anonymous.PULSE</string>
 	<key>PROJECT_ID</key>
 	<string>attendance-tracker-custom</string>
 	<key>STORAGE_BUCKET</key>

@@ -4,22 +4,64 @@ import { Alert, StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { StyledButton } from '@/components/StyledButton';
+import { DropdownOption, StyledDropdown } from '@/components/StyledDropdown';
 import { StyledTextInput } from '@/components/StyledTextInput';
+import { useAuth } from '@/context/AuthContext';
+import { firebaseDb } from '@/firebaseConfig';
+import firestore from '@react-native-firebase/firestore';
 
+const ARTICLE_CATEGORIES: DropdownOption[] = [
+  { label: 'Wellness', value: 'wellness' },
+  { label: 'Tech Tips', value: 'tech-tips' },
+  { label: 'Team Culture', value: 'team-culture' },
+  { label: 'Company News', value: 'company-news' }
+];
 export default function WriteArticleScreen() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const { user } = useAuth();
+  const [category, setCategory] = useState<DropdownOption | null>(null);
 
-  const handlePublish = () => {
+  const handleSave = async (status: 'published' | 'draft') => {
     if (!title || !content) {
       Alert.alert('Missing Fields', 'Please enter a title and some content before publishing.');
       return;
     }
-    // In a real app, you would send this data to your backend API
-    console.log('Publishing article:', { title, content });
-    Alert.alert('Success', 'Your article has been published!', [
-      { text: 'OK', onPress: () => router.back() },
-    ]);
+    if (!user) {
+      Alert.alert('Not Authenticated', 'You must be logged in to post an article.');
+      return;
+    }
+
+    if (status === 'published') {
+      setIsPublishing(true);
+    } else {
+      setIsSavingDraft(true);
+    }
+
+    try {
+      await firebaseDb.collection('articles').add({
+        title,
+        category: category?.value || 'uncategorized',
+        content,
+        authorId: user.uid,
+        authorName: user.displayName,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+        likeCount: 0,
+        status,
+      });
+
+      Alert.alert('Success', `Your article has been ${status}!`, [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch (error) {
+      console.error(`Error saving article as ${status}:`, error);
+      Alert.alert('Error', 'There was a problem saving your article. Please try again.');
+    } finally {
+      setIsPublishing(false);
+      setIsSavingDraft(false);
+    }
   };
 
   return (
@@ -31,7 +73,14 @@ export default function WriteArticleScreen() {
         style={styles.titleInput}
       />
 
-      <StyledButton title="Upload Cover Image" variant="secondary" style={styles.uploadButton} />
+      <StyledButton  disabled={true} title="Upload Cover Image" variant="secondary" style={styles.uploadButton} />
+
+      <StyledDropdown
+        options={ARTICLE_CATEGORIES}
+        placeholder="Select Category"
+        selectedValue={category?.value}
+        onSelect={setCategory}
+      />
 
       <StyledTextInput
         placeholder="Start writing your article here..."
@@ -42,8 +91,17 @@ export default function WriteArticleScreen() {
       />
 
       <View style={styles.actions}>
-        <StyledButton title="Save Draft" variant="secondary" />
-        <StyledButton title="Publish" onPress={handlePublish} />
+        <StyledButton
+          title="Save Draft"
+          variant="secondary"
+          onPress={() => handleSave('draft')}
+          loading={isSavingDraft}
+        />
+        <StyledButton
+          title="Publish"
+          onPress={() => handleSave('published')}
+          loading={isPublishing}
+        />
       </View>
     </Screen>
   );
@@ -62,6 +120,7 @@ const styles = StyleSheet.create({
   },
   uploadButton: {
     marginBottom: 16,
+    
   },
   contentInput: {
     flex: 1,

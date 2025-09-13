@@ -11,12 +11,14 @@ import { firebaseAuth } from '../../firebaseConfig';
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password.');
       return;
     }
+    setIsLoading(true);
     firebaseAuth
       .signInWithEmailAndPassword(email, password)
       .then((userCredential) => {
@@ -26,6 +28,9 @@ export default function LoginScreen() {
       })
       .catch((error) => {
         Alert.alert('Login Error', error.message);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   };
 
@@ -45,7 +50,7 @@ export default function LoginScreen() {
           onChangeText={setEmail}
         />
         <StyledTextInput placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
-        <StyledButton title="Sign In" onPress={handleLogin} />
+        <StyledButton title="Sign In" onPress={handleLogin} loading={isLoading} />
       </View>
 
       <View style={styles.footer}>

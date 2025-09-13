@@ -4,9 +4,12 @@ import React from 'react';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme() ?? 'light';
+
+  useNotifications(); // Set up notifications and get device token
 
   return (
     <Tabs

@@ -37,3 +37,9 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+
+# Local Android properties
+android/local.properties
+
+# EAS configuration
+eas.json

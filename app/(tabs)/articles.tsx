@@ -1,54 +1,80 @@
 import { Card } from '@/components/Card';
 import { ArticleCardPlaceholder } from '@/components/placeholders/ArticleCardPlaceholder';
 import { StyledButton } from '@/components/StyledButton';
+import { DropdownOption } from '@/components/StyledDropdown';
 import { StyledText } from '@/components/StyledText';
 import { StyledTextInput } from '@/components/StyledTextInput';
 import { Colors } from '@/constants/Colors';
+import { firebaseDb } from '@/firebaseConfig';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const MOCK_ARTICLES = [
-  { id: '1', title: 'Wellness Wednesday: Tips for a Healthy Work-Life Balance', author: 'Jane Doe', category: 'Wellness', type: 'company' },
-  { id: '2', title: 'My Journey into React Native', author: 'John Smith', category: 'Tech Tips', type: 'user' },
-  { id: '3', title: 'Q3 All-Hands Recap', author: 'CEO', category: 'Company News', type: 'company' },
-  { id: '4', title: 'How to Improve Team Culture', author: 'Emily White', category: 'Team Culture', type: 'user' },
+export interface Article {
+  id: string;
+  title: string;
+  authorName: string;
+  category: string;
+  status: 'published' | 'draft';
+  createdAt: any; // Firestore Timestamp
+  content: string;
+  likeCount: number;
+}
+const CATEGORIES: DropdownOption[] = [
+  { label: 'All', value: 'all' },
+  { label: 'Wellness', value: 'wellness' },
+  { label: 'Tech Tips', value: 'tech-tips' },
+  { label: 'Team Culture', value: 'team-culture' },
+  { label: 'Company News', value: 'company-news' },
 ];
-
-const CATEGORIES = ['All', 'Wellness', 'Tech Tips', 'Team Culture', 'Company News'];
 
 export default function ArticlesScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const insets = useSafeAreaInsets();
-  const backgroundColor = useThemeColor({}, 'background');
+  const backgroundColor = Colors[colorScheme].background;
   const [isLoading, setIsLoading] = useState(true);
-  const [articles, setArticles] = useState<(typeof MOCK_ARTICLES)>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setArticles(MOCK_ARTICLES);
-      setIsLoading(false);
-    }, 1500); // Simulate network request
-    return () => clearTimeout(timer);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      setIsLoading(true);
+      let articlesQuery: any = firebaseDb
+        .collection('articles')
+        .where('status', '==', 'published');
 
-  const renderArticle = ({ item }: { item: (typeof MOCK_ARTICLES)[0] }) => (
+      if (selectedCategory !== 'all') {
+        articlesQuery = articlesQuery.where('category', '==', selectedCategory);
+      }
+
+      const unsubscribe = articlesQuery.orderBy('createdAt', 'desc').onSnapshot(
+        (querySnapshot) => {
+          const fetchedArticles = querySnapshot.docs.map(
+            (doc) => ({ id: doc.id, ...doc.data() }) as Article
+          );
+          setArticles(fetchedArticles);
+          setIsLoading(false);
+        },
+        (error) => {
+          console.error('Error fetching articles: ', error);
+          setIsLoading(false);
+        }
+      );
+
+      return () => unsubscribe();
+    }, [selectedCategory])
+  );
+
+  const renderArticle = ({ item }: { item: Article }) => (
     <Pressable onPress={() => router.push(`/article/${item.id}`)}>
       <Card style={styles.articleCard}>
         <StyledText style={styles.articleTitle}>{item.title}</StyledText>
         <StyledText style={styles.articleAuthor}>
-          By {item.author} in <StyledText style={{ fontWeight: 'bold' }}>{item.category}</StyledText>
+          By {item.authorName} in <StyledText style={{ fontWeight: 'bold' }}>{item.category}</StyledText>
         </StyledText>
-        {item.type === 'company' && (
-          <View style={[styles.badge, { backgroundColor: Colors[colorScheme].accent }]}>
-            <StyledText style={[styles.badgeText, { color: Colors[colorScheme].buttonText }]}>
-              Official
-            </StyledText>
-          </View>
-        )}
       </Card>
     </Pressable>
   );
@@ -60,7 +86,13 @@ export default function ArticlesScreen() {
         <View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
             {CATEGORIES.map((cat) => (
-              <StyledButton key={cat} title={cat} variant="secondary" style={styles.categoryButton} />
+              <StyledButton
+                key={cat.value}
+                title={cat.label}
+                variant={selectedCategory === cat.value ? 'primary' : 'secondary'}
+                style={styles.categoryButton}
+                onPress={() => setSelectedCategory(cat.value)}
+              />
             ))}
           </ScrollView>
         </View>
@@ -70,11 +102,26 @@ export default function ArticlesScreen() {
   return (
     <>
       <View style={[styles.container, { backgroundColor, paddingTop: insets.top }]}>
+        {/* Fixed Header */}
+      <View style={styles.fixedHeader}>
+        <StyledText style={styles.header}>Articles</StyledText>
+        <StyledTextInput placeholder="Search articles..." />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
+          {CATEGORIES.map((cat) => (
+            <StyledButton
+              key={cat.value}
+              title={cat.label}
+              variant={selectedCategory === cat.value ? 'primary' : 'secondary'}
+              style={styles.categoryButton}
+              onPress={() => setSelectedCategory(cat.value)}
+            />
+          ))}
+        </ScrollView>
+      </View>
         <FlatList
-          data={isLoading ? Array.from({ length: 4 }) : articles}
+          data={isLoading ? Array.from({ length: 4 }) : articles}  
           renderItem={isLoading ? () => <ArticleCardPlaceholder /> : renderArticle}
           keyExtractor={(item, index) => (isLoading ? index.toString() : item.id)}
-          ListHeaderComponent={ListHeader}
           contentContainerStyle={{ paddingBottom: insets.top + 80 }}
         />
       </View>
@@ -88,6 +135,20 @@ export default function ArticlesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  fixedHeader: {
+    paddingHorizontal: 16,
+    // Adapt height as needed
+    paddingBottom: 8,
+    // borderBottomColor: '#ccc',
+    // borderBottomWidth: 1,
+    // Elevation/shadow for iOS and Android if desired
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { height: 2, width: 0 },
+    zIndex: 1,
   },
   header: {
     fontSize: 36,

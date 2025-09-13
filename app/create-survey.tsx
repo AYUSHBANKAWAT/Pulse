@@ -6,19 +6,35 @@ import { Screen } from '@/components/Screen';
 import { StyledButton } from '@/components/StyledButton';
 import { StyledText } from '@/components/StyledText';
 import { StyledTextInput } from '@/components/StyledTextInput';
+import { useAuth } from '@/context/AuthContext';
+import { firebaseRealtimeDb } from '@/firebaseConfig';
+import database from '@react-native-firebase/database';
 
 export default function CreateSurveyScreen() {
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']); // Start with two options
+  const { user } = useAuth();
 
   const handlePostSurvey = () => {
     if (!question || options.some((opt) => !opt.trim())) {
       Alert.alert('Missing Fields', 'Please enter a question and fill all option fields.');
       return;
     }
-    // In a real app, you would send this data to your backend API
-    console.log('Posting Survey:', { question, options });
-    Alert.alert('Survey Posted!', 'Your survey has been posted to the company chat.', [
+    if (!user) return;
+
+    const messagesRef = firebaseRealtimeDb.ref('/chat/messages').push();
+    messagesRef.set({
+      type: 'survey',
+      question,
+      options,
+      author: user.displayName,
+      authorId: user.uid,
+      avatar: user.photoURL,
+      createdAt: database.ServerValue.TIMESTAMP,
+      votes: { placeholder: -1 }, // Initialize votes object to ensure it exists
+    });
+
+    Alert.alert('Survey Posted!', 'Your survey is now live in the company chat.', [
       { text: 'OK', onPress: () => router.back() },
     ]);
   };

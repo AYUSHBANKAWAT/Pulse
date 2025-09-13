@@ -4,28 +4,60 @@ import { Alert, StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { StyledButton } from '@/components/StyledButton';
+import { StyledDropdown, type DropdownOption } from '@/components/StyledDropdown';
 import { StyledText } from '@/components/StyledText';
 import { StyledTextInput } from '@/components/StyledTextInput';
-import { firebaseAuth } from '../../firebaseConfig';
+import firestore from '@react-native-firebase/firestore';
+import { firebaseAuth, firebaseDb } from '../../firebaseConfig';
+
+const LOCATION_OPTIONS: DropdownOption[] = [
+  { label: 'Delhi', value: 'delhi' },
+  { label: 'Noida', value: 'noida' },
+  { label: 'Pune', value: 'pune' },
+  { label: 'Bengaluru', value: 'bengaluru' },
+  { label: 'Hyderabad', value: 'hyderabad' },
+];
 
 export default function SignUpScreen() {
   const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
+  const [baseLocation, setBaseLocation] = useState<DropdownOption | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSignUp = () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password.');
+    if (!email || !password || !fullName || !baseLocation) {
+      Alert.alert('Error', 'Please fill in all fields.');
       return;
     }
+    setIsLoading(true);
     firebaseAuth
       .createUserWithEmailAndPassword(email, password)
       .then((userCredential) => {
-        // Signed in
-        console.log('User account created & signed in!', userCredential.user);
+        const user = userCredential.user;
+        // Create promises for both profile update and Firestore write
+        const profileUpdatePromise = user.updateProfile({
+          displayName: fullName,
+        });
+        const firestorePromise = firebaseDb.collection('users').doc(user.uid).set({
+          uid: user.uid,
+          fullName: fullName,
+          email: email,
+          baseLocation: baseLocation.value, // Save the selected location value
+          createdAt: firestore.FieldValue.serverTimestamp(),
+          kudosReceived: 0,
+        });
+        return Promise.all([profileUpdatePromise, firestorePromise]);
+      })
+      .then(() => {
+        console.log('User account created & user data saved to Firestore!');
         router.replace('/(tabs)');
       })
       .catch((error) => {
         Alert.alert('Signup Error', error.message);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   };
 
@@ -37,7 +69,7 @@ export default function SignUpScreen() {
       </View>
 
       <View style={styles.form}>
-        <StyledTextInput placeholder="Full Name" />
+        <StyledTextInput placeholder="Full Name" value={fullName} onChangeText={setFullName} />
         <StyledTextInput
           placeholder="Email Address"
           keyboardType="email-address"
@@ -46,7 +78,13 @@ export default function SignUpScreen() {
           onChangeText={setEmail}
         />
         <StyledTextInput placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
-        <StyledButton title="Create Account" onPress={handleSignUp} />
+        <StyledDropdown
+          options={LOCATION_OPTIONS}
+          placeholder="Select Base Location"
+          selectedValue={baseLocation?.value}
+          onSelect={setBaseLocation}
+        />
+        <StyledButton title="Create Account" onPress={handleSignUp} loading={isLoading} style={{ marginTop: 16 }} />
       </View>
 
       <View style={styles.footer}>

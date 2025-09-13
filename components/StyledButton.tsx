@@ -1,4 +1,4 @@
-import { Pressable, type PressableProps, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, Pressable, type PressableProps, StyleSheet, Text } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -6,9 +6,10 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 interface StyledButtonProps extends PressableProps {
   title: string;
   variant?: 'primary' | 'secondary';
+  loading?: boolean;
 }
 
-export function StyledButton({ title, variant = 'primary', ...props }: StyledButtonProps) {
+export function StyledButton({ title, variant = 'primary', loading = false, ...props }: StyledButtonProps) {
   const colorScheme = useColorScheme() ?? 'light';
   const themeColors = Colors[colorScheme];
 
@@ -27,14 +28,19 @@ export function StyledButton({ title, variant = 'primary', ...props }: StyledBut
 
   return (
     <Pressable
+      disabled={loading}
       {...props}
       style={({ pressed }) => [
         styles.button,
         { backgroundColor: currentVariant.backgroundColor },
-        pressed && styles.pressed,
+        (pressed || loading) && styles.pressed,
         props.style,
       ]}>
-      <Text style={[styles.text, { color: currentVariant.textColor }]}>{title}</Text>
+      {loading ? (
+        <ActivityIndicator color={currentVariant.textColor} />
+      ) : (
+        <Text style={[styles.text, { color: currentVariant.textColor }]}>{title}</Text>
+      )}
     </Pressable>
   );
 }

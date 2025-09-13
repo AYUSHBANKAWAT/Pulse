@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "776198429140",
+    "firebase_url": "https://attendance-tracker-custom-default-rtdb.firebaseio.com",
     "project_id": "attendance-tracker-custom",
     "storage_bucket": "attendance-tracker-custom.firebasestorage.app"
   },

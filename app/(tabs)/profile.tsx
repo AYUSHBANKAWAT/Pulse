@@ -1,44 +1,66 @@
 import { router } from 'expo-router';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/Card';
-import { Screen } from '@/components/Screen';
 import { StyledButton } from '@/components/StyledButton';
 import { StyledText } from '@/components/StyledText';
+import { useAuth } from '@/context/AuthContext';
+import { firebaseAuth, firebaseDb } from '@/firebaseConfig';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
-// Mock Data
-const MOCK_USER = {
-  name: 'Jane Doe',
-  role: 'Lead Engineer',
-  avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
-  kudosReceived: 125,
-  articlesPublished: 5,
-};
-
 export default function ProfileScreen() {
+  const { user, userProfile } = useAuth();
   const accentColor = useThemeColor({}, 'accent');
+  const [publishedArticleCount, setPublishedArticleCount] = useState(0);
+
+  // Fetch the count of published articles
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubscribe = firebaseDb
+      .collectionGroup('articles')
+      .where('authorId', '==', user.uid)
+      .where('status', '==', 'published')
+      .onSnapshot((querySnapshot) => {
+        setPublishedArticleCount(querySnapshot.size);
+      });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const handleLogout = () => {
+    firebaseAuth.signOut().catch((error) => {
+      console.error('Sign out error', error);
+      Alert.alert('Error', 'Failed to sign out.');
+    });
+    // The root layout will handle redirecting the user automatically.
+  };
 
   return (
-    <Screen contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.profileHeader}>
-        <Image source={{ uri: MOCK_USER.avatar }} style={styles.avatar} />
-        <StyledText style={styles.name}>{MOCK_USER.name}</StyledText>
-        <StyledText style={styles.role}>{MOCK_USER.role}</StyledText>
+        <Image
+          source={{
+            // Use a placeholder if avatar is not available
+            uri: user?.photoURL ?? `https://i.pravatar.cc/150?u=${user?.uid}`,
+          }}
+          style={styles.avatar}
+        />
+        <StyledText style={styles.name}>{user?.displayName ?? 'Anonymous User'}</StyledText>
+        <StyledText style={styles.role}>{user?.email}</StyledText>
       </View>
 
       <Card>
         <StyledText style={styles.cardTitle}>My Stats</StyledText>
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <StyledText style={[styles.statValue, { color: accentColor }]}>
-              {MOCK_USER.kudosReceived}
-            </StyledText>
+            <StyledText style={[styles.statValue, { color: accentColor }]}>{userProfile?.kudosReceived ?? 0}</StyledText>
             <StyledText style={styles.statLabel}>Kudos Received</StyledText>
           </View>
           <View style={styles.statItem}>
             <StyledText style={[styles.statValue, { color: accentColor }]}>
-              {MOCK_USER.articlesPublished}
+              {publishedArticleCount}
             </StyledText>
             <StyledText style={styles.statLabel}>Articles Published</StyledText>
           </View>
@@ -54,9 +76,9 @@ export default function ProfileScreen() {
 
       <Card>
         <StyledText style={styles.cardTitle}>Account</StyledText>
-        <StyledButton title="Logout" variant="secondary" onPress={() => router.replace('/login')} />
+        <StyledButton title="Logout" variant="secondary" onPress={handleLogout} />
       </Card>
-    </Screen>
+    </ScrollView>
   );
 }
 
