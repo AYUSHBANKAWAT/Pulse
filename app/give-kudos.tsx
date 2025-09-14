@@ -30,7 +30,7 @@ export default function GiveKudosScreen() {
       console.log('Fetching users for kudos...',currentUser);
       try {
         const usersSnapshot = await firebaseDb.collection('users').get();
-        const fetchedUsers = usersSnapshot.docs
+        const fetchedUsers = (usersSnapshot?.docs || [])
           .map((doc) => doc.data() as AppUser)
           .filter((u) => u.uid !== currentUser.uid) // Exclude current user
           .map((u) => ({ label: u.fullName, value: u.uid }));

@@ -34,6 +34,7 @@ export default function ArticleDetailScreen() {
   const [isPostingComment, setIsPostingComment] = useState(false);
   const { user } = useAuth();
 
+
   useEffect(() => {
     if (!id) {
       setIsLoading(false);
@@ -51,11 +52,12 @@ export default function ArticleDetailScreen() {
       setIsLoading(false);
     });
 
-    const commentsRef = docRef.collection('comments').orderBy('createdAt', 'desc');
-    const unsubscribeComments = commentsRef.onSnapshot((snapshot) => {
-      const fetchedComments = snapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() }) as Comment
-      );
+    const commentsQuery = docRef.collection('comments').orderBy('createdAt', 'desc');
+
+    const unsubscribeComments = commentsQuery.onSnapshot((snapshot) => {
+      if (!snapshot) return;
+
+      const fetchedComments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Comment);
       setComments(fetchedComments);
     });
 
@@ -64,6 +66,7 @@ export default function ArticleDetailScreen() {
       unsubscribeComments();
     };
   }, [id]);
+
 
   const handleLike = async () => {
     if (!id || !user) return;
@@ -82,12 +85,14 @@ export default function ArticleDetailScreen() {
     if (!newComment.trim() || !user || !id) return;
     setIsPostingComment(true);
     try {
-      await firebaseDb.collection('articles').doc(id as string).collection('comments').add({
+      let t = {
         text: newComment,
         authorId: user.uid,
         authorName: user.displayName,
         createdAt: firestore.FieldValue.serverTimestamp(),
-      });
+      }
+      console.log('Posting comment: ', t,id as string);
+      await firebaseDb.collection('articles').doc(id as string).collection('comments').add(t);
       setNewComment(''); // Clear input
     } catch (error) {
       console.error('Error posting comment: ', error);

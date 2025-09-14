@@ -1,9 +1,12 @@
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { FlatList, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/Card';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
+import { ChatMessagePlaceholder } from '@/components/placeholders/ChatMessagePlaceholder';
 import { StyledButton } from '@/components/StyledButton';
 import { StyledText } from '@/components/StyledText';
 import { StyledTextInput } from '@/components/StyledTextInput';
@@ -108,10 +111,13 @@ const SurveyItem = ({ item }: { item: Message }) => {
 export default function CompanyChatScreen() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const backgroundColor = useThemeColor({}, 'background');
   const cardColor = useThemeColor({}, 'cardBackground');
   const accentColor = useThemeColor({}, 'accent');
   const borderColor = useThemeColor({}, 'border');
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const { user } = useAuth();
 
   useEffect(() => {
@@ -128,6 +134,7 @@ export default function CompanyChatScreen() {
           .sort((a, b) => b.createdAt - a.createdAt); // Sort descending for inverted list
         setMessages(messageList);
       }
+      setIsLoading(false);
     });
 
     // Stop listening for updates when no longer required
@@ -161,16 +168,16 @@ export default function CompanyChatScreen() {
   };
 
   return (
-    <View style={[styles.screenContainer, { backgroundColor }]}>
-      <StyledText style={styles.header}>Company Chat</StyledText>
+    <View style={[styles.screenContainer, { backgroundColor, paddingTop: insets.top }]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={90}>
+        keyboardVerticalOffset={tabBarHeight}>
+        <StyledText style={styles.header}>Company Chat</StyledText>
         <FlatList
-          data={messages}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
+          data={isLoading ? Array.from({ length: 8 }) : messages}
+          renderItem={isLoading ? () => <ChatMessagePlaceholder /> : renderItem}
+          keyExtractor={(item, index) => (isLoading ? index.toString() : item.id)}
           inverted
           contentContainerStyle={styles.listContentContainer}
         />
@@ -230,7 +237,7 @@ const styles = StyleSheet.create({
     opacity: 0.1,
   },
   surveyResults: { textAlign: 'right', marginTop: 8, opacity: 0.7, fontSize: 12 },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', padding: 8, borderTopWidth: 1 },
+  inputContainer: { flexDirection: 'row', alignItems:'center' ,padding: 8, borderTopWidth: 1,marginVertical: 0},
   textInput: { flex: 1, marginVertical: 0, height: 40 },
   sendButton: { width: 'auto', height: 40, paddingHorizontal: 16, marginLeft: 8, marginVertical: 0 },
 });

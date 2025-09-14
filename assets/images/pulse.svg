@@ -1,0 +1,35 @@
+<svg width="320" height="256" viewBox="0 0 320 256" xmlns="http://www.w3.org/2000/svg">
+  <rect width="320" height="256" fill="#F8F8F8"/>
+  <text x="28" y="150" font-family="Montserrat, Arial, sans-serif" font-size="72" font-weight="700" fill="#191A23">P</text>
+  <!-- Abstract Pulse Bars replacing 'U' with animated vertical movement and opacity -->
+  <rect x="78" y="94" width="16" height="65" rx="8" transform="rotate(15 86 130)" fill="url(#pulseGrad1)">
+    <animate attributeName="y" values="94;84;94" dur="1.4s" repeatCount="indefinite" />
+    <animate attributeName="opacity" values="1;0.7;1" dur="1.4s" repeatCount="indefinite" />
+  </rect>
+  <rect x="102" y="94" width="16" height="65" rx="8" transform="rotate(15 110 130)" fill="url(#pulseGrad2)">
+    <animate attributeName="y" values="94;84;94" dur="1.4s" begin="0.2s" repeatCount="indefinite" />
+    <animate attributeName="opacity" values="1;0.7;1" dur="1.4s" begin="0.2s" repeatCount="indefinite" />
+  </rect>
+  <rect x="126" y="94" width="16" height="65" rx="8" transform="rotate(15 134 130)" fill="url(#pulseGrad3)">
+    <animate attributeName="y" values="94;84;94" dur="1.4s" begin="0.4s" repeatCount="indefinite" />
+    <animate attributeName="opacity" values="1;0.7;1" dur="1.4s" begin="0.4s" repeatCount="indefinite" />
+  </rect>
+  <!-- Other letters -->
+  <text x="154" y="150" font-family="Montserrat, Arial, sans-serif" font-size="72" font-weight="700" fill="#191A23">LSE</text>
+  <!-- Gradients for pulse bars -->
+  <defs>
+    <linearGradient id="pulseGrad1" x1="78" y1="94" x2="94" y2="166" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFB000"/>
+      <stop offset="1" stop-color="#EB7200"/>
+    </linearGradient>
+    <linearGradient id="pulseGrad2" x1="102" y1="94" x2="118" y2="166" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFA500"/>
+      <stop offset="1" stop-color="#EB7200"/>
+    </linearGradient>
+    <linearGradient id="pulseGrad3" x1="126" y1="94" x2="142" y2="166" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF9000"/>
+      <stop offset="1" stop-color="#EB7200"/>
+    </linearGradient>
+  </defs>
+</svg>
+

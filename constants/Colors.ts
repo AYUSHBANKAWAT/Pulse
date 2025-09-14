@@ -15,7 +15,7 @@ export const Colors = {
     inputPlaceholder: '#6E6E73',
     buttonText: '#FFFFFF',
     messageBubble: '#E5E5EA',
-    accent: accentColor,
+    accent: '#EB7200',
     border: '#D1D1D6',
   },
   dark: {
@@ -27,7 +27,7 @@ export const Colors = {
     inputPlaceholder: '#8E8E93',
     buttonText: '#000000', // Black text on the vibrant accent
     messageBubble: '#2C2C2E',
-    accent: accentColor,
+    accent: '#EB7200',
     border: '#38383A',
   },
 };

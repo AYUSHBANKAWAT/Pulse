@@ -23,7 +23,7 @@ export default function ProfileScreen() {
       .where('authorId', '==', user.uid)
       .where('status', '==', 'published')
       .onSnapshot((querySnapshot) => {
-        setPublishedArticleCount(querySnapshot.size);
+        setPublishedArticleCount(querySnapshot?.size || 0);
       });
 
     return () => unsubscribe();
