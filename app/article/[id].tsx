@@ -85,14 +85,14 @@ export default function ArticleDetailScreen() {
     if (!newComment.trim() || !user || !id) return;
     setIsPostingComment(true);
     try {
-      let t = {
+      const newCommentData = {
         text: newComment,
         authorId: user.uid,
         authorName: user.displayName,
         createdAt: firestore.FieldValue.serverTimestamp(),
-      }
-      console.log('Posting comment: ', t,id as string);
-      await firebaseDb.collection('articles').doc(id as string).collection('comments').add(t);
+      };
+      console.log('Posting comment: ', newCommentData, id as string);
+      await firebaseDb.collection('articles').doc(id as string).collection('comments').add(newCommentData);
       setNewComment(''); // Clear input
     } catch (error) {
       console.error('Error posting comment: ', error);

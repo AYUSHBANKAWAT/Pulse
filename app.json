@@ -4,7 +4,7 @@
     "slug": "PULSE",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/pulse-icon.png",
+    "icon": "./assets/images/react-logo.png",
     "scheme": "pulse",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -15,7 +15,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/pulse-adaptive-icon.png",
+        "foregroundImage": "./assets/images/react-logo.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.customApps.attendanceTracker",

@@ -1,8 +1,7 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 
-import { Screen } from '@/components/Screen';
 import { StyledButton } from '@/components/StyledButton';
 import { DropdownOption, StyledDropdown } from '@/components/StyledDropdown';
 import { StyledText } from '@/components/StyledText';
@@ -106,7 +105,7 @@ export default function GiveKudosScreen() {
   };
 
   return (
-    <Screen style={styles.container} contentContainerStyle={{ flexGrow: 1 }}>
+    <ScrollView style={styles.container} contentContainerStyle={{ flexGrow: 1 }}>
       <StyledText style={styles.title}>Give Kudos</StyledText>
       <StyledDropdown
         placeholder="To: (Select a colleague)"
@@ -125,7 +124,7 @@ export default function GiveKudosScreen() {
         <StyledButton title="Send Kudos" onPress={handleSendKudos} loading={isLoading} />
         <StyledButton title="Cancel" variant="secondary" onPress={() => router.back()} />
       </View>
-    </Screen>
+    </ScrollView>
   );
 }
 

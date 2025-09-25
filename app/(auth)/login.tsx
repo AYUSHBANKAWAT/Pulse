@@ -28,6 +28,7 @@ export default function LoginScreen() {
       })
       .catch((error) => {
         Alert.alert('Login Error', error.message);
+        console.log('Error',error.message)
       })
       .finally(() => {
         setIsLoading(false);
