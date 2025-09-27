@@ -1,8 +1,10 @@
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { useNotifications } from '@/hooks/useNotifications';
 import { SplashScreen, Stack, router, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 // Prevent the splash screen from auto-hiding before we know the user's auth state.
 SplashScreen.preventAutoHideAsync();
@@ -10,6 +12,9 @@ SplashScreen.preventAutoHideAsync();
 function RootLayoutNav() {
   const { user, isLoading } = useAuth();
   const segments = useSegments();
+
+  // Activate notification registration when user is available
+  useNotifications();
 
   useEffect(() => {
     if (isLoading) {
@@ -49,6 +54,7 @@ export default function RootLayout() {
         animated
       />
       <RootLayoutNav />
+      <Toast />
     </AuthProvider>
   );
 }

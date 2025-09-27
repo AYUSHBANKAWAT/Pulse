@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/Card';
@@ -9,6 +9,7 @@ import { StyledText } from '@/components/StyledText';
 import { useAuth } from '@/context/AuthContext';
 import { firebaseAuth, firebaseDb } from '@/firebaseConfig';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { toastService } from '@/toastService';
 
 export default function ProfileScreen() {
   const { user, userProfile } = useAuth();
@@ -21,7 +22,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (!user) return;
 
-    const unsubscribe = firebaseDb
+    const unsubscribe = firebaseDb()
       .collectionGroup('articles')
       .where('authorId', '==', user.uid)
       .where('status', '==', 'published')
@@ -33,9 +34,9 @@ export default function ProfileScreen() {
   }, [user]);
 
   const handleLogout = () => {
-    firebaseAuth.signOut().catch((error) => {
+    firebaseAuth().signOut().catch((error) => {
       console.error('Sign out error', error);
-      Alert.alert('Error', 'Failed to sign out.');
+      toastService.showError('Failed to sign out.');
     });
     // The root layout will handle redirecting the user automatically.
   };

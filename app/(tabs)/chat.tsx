@@ -13,7 +13,6 @@ import { StyledTextInput } from '@/components/StyledTextInput';
 import { useAuth } from '@/context/AuthContext';
 import { firebaseRealtimeDb } from '@/firebaseConfig';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import database from '@react-native-firebase/database';
 
 interface Message {
   id: string;
@@ -58,7 +57,7 @@ const SurveyItem = ({ item }: { item: Message }) => {
   const handleVote = (optionIndex: number) => {
     if (!user || hasVoted || !item.id) return;
 
-    const voteRef = firebaseRealtimeDb.ref(`/chat/messages/${item.id}/votes/${user.uid}`);
+    const voteRef = firebaseRealtimeDb().ref(`/chat/messages/${item.id}/votes/${user.uid}`);
     voteRef.set(optionIndex).catch((error) => {
       console.error('Error voting:', error);
     });
@@ -121,7 +120,7 @@ export default function CompanyChatScreen() {
   const { user } = useAuth();
 
   useEffect(() => {
-    const messagesRef = firebaseRealtimeDb.ref('/chat/messages').limitToLast(50);
+    const messagesRef = firebaseRealtimeDb().ref('/chat/messages').limitToLast(50);
 
     const onValueChange = messagesRef.on('value', (snapshot) => {
       const data = snapshot.val();
@@ -144,14 +143,14 @@ export default function CompanyChatScreen() {
   const handleSendMessage = () => {
     if (!message.trim() || !user) return;
 
-    const messagesRef = firebaseRealtimeDb.ref('/chat/messages').push();
+    const messagesRef = firebaseRealtimeDb().ref('/chat/messages').push();
     messagesRef.set({
       type: 'text',
       text: message,
       author: user.displayName,
       authorId: user.uid,
       avatar: user.photoURL,
-      createdAt: database.ServerValue.TIMESTAMP,
+      createdAt: firebaseRealtimeDb.ServerValue.TIMESTAMP,
     });
 
     setMessage('');

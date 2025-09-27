@@ -1,14 +1,15 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Screen } from '@/components/Screen';
 import { StyledButton } from '@/components/StyledButton';
 import { DropdownOption, StyledDropdown } from '@/components/StyledDropdown';
 import { StyledTextInput } from '@/components/StyledTextInput';
 import { useAuth } from '@/context/AuthContext';
 import { firebaseDb } from '@/firebaseConfig';
-import firestore from '@react-native-firebase/firestore';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { toastService } from '@/toastService';
 
 const ARTICLE_CATEGORIES: DropdownOption[] = [
   { label: 'Wellness', value: 'wellness' },
@@ -23,14 +24,16 @@ export default function WriteArticleScreen() {
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const { user } = useAuth();
   const [category, setCategory] = useState<DropdownOption | null>(null);
+  const backgroundColor = useThemeColor({}, 'background');
+  const insets = useSafeAreaInsets();
 
   const handleSave = async (status: 'published' | 'draft') => {
     if (!title || !content) {
-      Alert.alert('Missing Fields', 'Please enter a title and some content before publishing.');
+      toastService.showError('Please enter a title and some content before publishing.', 'Missing Fields');
       return;
     }
     if (!user) {
-      Alert.alert('Not Authenticated', 'You must be logged in to post an article.');
+      toastService.showError('You must be logged in to post an article.', 'Not Authenticated');
       return;
     }
 
@@ -41,23 +44,22 @@ export default function WriteArticleScreen() {
     }
 
     try {
-      await firebaseDb.collection('articles').add({
+      await firebaseDb().collection('articles').add({
         title,
         category: category?.value || 'uncategorized',
         content,
         authorId: user.uid,
         authorName: user.displayName,
-        createdAt: firestore.FieldValue.serverTimestamp(),
+        createdAt: firebaseDb.FieldValue.serverTimestamp(),
         likeCount: 0,
         status,
       });
 
-      Alert.alert('Success', `Your article has been ${status}!`, [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      toastService.showSuccess(`Your article has been ${status}!`);
+      router.back();
     } catch (error) {
       console.error(`Error saving article as ${status}:`, error);
-      Alert.alert('Error', 'There was a problem saving your article. Please try again.');
+      toastService.showError('There was a problem saving your article. Please try again.');
     } finally {
       setIsPublishing(false);
       setIsSavingDraft(false);
@@ -65,49 +67,52 @@ export default function WriteArticleScreen() {
   };
 
   return (
-    <Screen style={styles.container} contentContainerStyle={{ flexGrow: 1 }}>
-      <StyledTextInput
-        placeholder="Article Title"
-        value={title}
-        onChangeText={setTitle}
-        style={styles.titleInput}
-      />
-
-      <StyledButton  disabled={true} title="Upload Cover Image" variant="secondary" style={styles.uploadButton} />
-
-      <StyledDropdown
-        options={ARTICLE_CATEGORIES}
-        placeholder="Select Category"
-        selectedValue={category?.value}
-        onSelect={setCategory}
-      />
-
-      <StyledTextInput
-        placeholder="Start writing your article here..."
-        value={content}
-        onChangeText={setContent}
-        multiline
-        style={styles.contentInput}
-      />
-
-      <View style={styles.actions}>
-        <StyledButton
-          title="Save Draft"
-          variant="secondary"
-          onPress={() => handleSave('draft')}
-          loading={isSavingDraft}
+    <View style={[styles.screenContainer, { backgroundColor, paddingTop: insets.top }]}>
+      <ScrollView style={styles.container} contentContainerStyle={{ flexGrow: 1 }}>
+        <StyledTextInput
+          placeholder="Article Title"
+          value={title}
+          onChangeText={setTitle}
+          style={styles.titleInput}
         />
-        <StyledButton
-          title="Publish"
-          onPress={() => handleSave('published')}
-          loading={isPublishing}
+
+        <StyledButton disabled={true} title="Upload Cover Image" variant="secondary" style={styles.uploadButton} />
+
+        <StyledDropdown
+          options={ARTICLE_CATEGORIES}
+          placeholder="Select Category"
+          selectedValue={category?.value}
+          onSelect={setCategory}
         />
-      </View>
-    </Screen>
+
+        <StyledTextInput
+          placeholder="Start writing your article here..."
+          value={content}
+          onChangeText={setContent}
+          multiline
+          style={styles.contentInput}
+        />
+
+        <View style={styles.actions}>
+          <StyledButton
+            title="Save Draft"
+            variant="secondary"
+            onPress={() => handleSave('draft')}
+            loading={isSavingDraft}
+          />
+          <StyledButton
+            title="Publish"
+            onPress={() => handleSave('published')}
+            loading={isPublishing}
+          />
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContainer: { flex: 1 },
   container: {
     paddingHorizontal: 16,
   },

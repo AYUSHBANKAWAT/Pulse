@@ -1,13 +1,12 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { Screen } from '@/components/Screen';
 import { StyledButton } from '@/components/StyledButton';
 import { StyledDropdown, type DropdownOption } from '@/components/StyledDropdown';
 import { StyledText } from '@/components/StyledText';
 import { StyledTextInput } from '@/components/StyledTextInput';
-import firestore from '@react-native-firebase/firestore';
+import { toastService } from '@/toastService';
 import { firebaseAuth, firebaseDb } from '../../firebaseConfig';
 
 const LOCATION_OPTIONS: DropdownOption[] = [
@@ -27,11 +26,11 @@ export default function SignUpScreen() {
 
   const handleSignUp = () => {
     if (!email || !password || !fullName || !baseLocation) {
-      Alert.alert('Error', 'Please fill in all fields.');
+      toastService.showError('Please fill in all fields.');
       return;
     }
     setIsLoading(true);
-    firebaseAuth
+    firebaseAuth()
       .createUserWithEmailAndPassword(email, password)
       .then((userCredential) => {
         const user = userCredential.user;
@@ -39,12 +38,13 @@ export default function SignUpScreen() {
         const profileUpdatePromise = user.updateProfile({
           displayName: fullName,
         });
-        const firestorePromise = firebaseDb.collection('users').doc(user.uid).set({
+        const firestorePromise = firebaseDb().collection('users').doc(user.uid).set({
           uid: user.uid,
           fullName: fullName,
           email: email,
+          photoURL: user.photoURL, // Add photoURL during creation
           baseLocation: baseLocation.value, // Save the selected location value
-          createdAt: firestore.FieldValue.serverTimestamp(),
+          createdAt: firebaseDb.FieldValue.serverTimestamp(),
           kudosReceived: 0,
         });
         return Promise.all([profileUpdatePromise, firestorePromise]);
@@ -54,7 +54,7 @@ export default function SignUpScreen() {
         router.replace('/(tabs)');
       })
       .catch((error) => {
-        Alert.alert('Signup Error', error.message);
+        toastService.showError(error.message, 'Signup Error');
       })
       .finally(() => {
         setIsLoading(false);
@@ -62,7 +62,7 @@ export default function SignUpScreen() {
   };
 
   return (
-    <Screen contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
         <StyledText style={styles.title}>Create Account</StyledText>
         <StyledText style={styles.subtitle}>Let's get you started.</StyledText>
@@ -92,7 +92,7 @@ export default function SignUpScreen() {
           Already have an account? <StyledText style={styles.link}>Sign In</StyledText>
         </StyledText>
       </View>
-    </Screen>
+    </ScrollView>
   );
 }
 

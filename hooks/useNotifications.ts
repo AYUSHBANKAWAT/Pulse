@@ -1,5 +1,5 @@
 import { useAuth } from '@/context/AuthContext';
-import firestore from '@react-native-firebase/firestore';
+import { firebaseDb } from '@/firebaseConfig';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
@@ -65,16 +65,19 @@ export function useNotifications() {
         try {
           const token = await registerForPushNotificationsAsync();
           if (token) {
+            console.log('Attempting to save Expo Push Token to Firestore:', token, 'for user:', user.uid);
             setExpoPushToken(token);
             // Save the token to Firestore, using the token itself as the document ID.
-            const tokenRef = firestore().collection('deviceTokens').doc(token);
+            const tokenRef = firebaseDb().collection('deviceTokens').doc(token);
             await tokenRef.set({
+              expoPushToken: token, // Store the token explicitly in the document data as well
               uid: user.uid,
-              createdAt: firestore.FieldValue.serverTimestamp(),
+              createdAt: firebaseDb.FieldValue.serverTimestamp(),
             });
           }
         } catch (error) {
           console.error('Error during push token registration:', error);
+          // You might want to add an Alert here for the user in a real app
         }
       };
       registerToken();

@@ -33,14 +33,14 @@ export default function KudosScreen() {
     useCallback(() => {
       setIsLoading(true);
 
-      const kudosQuery = firebaseDb.collection('kudos').orderBy('createdAt', 'desc');
+      const kudosQuery = firebaseDb().collection('kudos').orderBy('createdAt', 'desc');
       const unsubscribeKudos = kudosQuery.onSnapshot((snapshot) => {
         const fetchedKudos = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Kudo);
         setKudosFeed(fetchedKudos);
         setIsLoading(false); // Can set loading false here
       });
 
-      const leaderboardQuery = firebaseDb
+      const leaderboardQuery = firebaseDb()
         .collection('users')
         .orderBy('kudosReceived', 'desc')
         .limit(3);

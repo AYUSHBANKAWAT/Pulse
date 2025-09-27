@@ -1,9 +1,11 @@
 import { useAuth } from '@/context/AuthContext';
-import firestore from '@react-native-firebase/firestore';
+import { firebaseDb } from '@/firebaseConfig';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, SafeAreaView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { StyledText } from '@/components/StyledText';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 // A simple type definition for your articles
 type Article = {
@@ -18,6 +20,11 @@ export default function MyArticlesScreen() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const backgroundColor = useThemeColor({}, 'background');
+  const cardBackgroundColor = useThemeColor({}, 'cardBackground');
+  const borderColor = useThemeColor({}, 'border');
+  const secondaryTextColor = useThemeColor({}, 'text');
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!user) {
@@ -27,7 +34,7 @@ export default function MyArticlesScreen() {
 
     // This sets up a real-time listener for the user's articles.
     // It uses a collectionGroup query, which is powerful but often requires a custom index.
-    const unsubscribe = firestore()
+    const unsubscribe = firebaseDb()
       .collectionGroup('articles')
       .where('authorId', '==', user.uid)
       .orderBy('createdAt', 'desc')
@@ -65,35 +72,38 @@ export default function MyArticlesScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <View style={[styles.screen, { backgroundColor, paddingTop: insets.top }]}>
       <FlatList
         data={articles}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.articleItem}>
+          <View style={[styles.articleItem, { backgroundColor: cardBackgroundColor, borderColor }]}>
             <StyledText style={styles.articleTitle}>{item.title}</StyledText>
-            <StyledText style={styles.articleStatus}>Status: {item.status}</StyledText>
+            <StyledText style={[styles.articleStatus, { color: secondaryTextColor, opacity: 0.7 }]}>
+              Status: {item.status}
+            </StyledText>
           </View>
         )}
         ListHeaderComponent={
           <StyledText style={styles.title}>My Articles & Drafts</StyledText>
         }
         ListEmptyComponent={
-          <StyledText style={styles.emptyText}>You haven't written any articles yet.</StyledText>
+          <StyledText style={[styles.emptyText, { color: secondaryTextColor, opacity: 0.7 }]}>
+            You haven't written any articles yet.
+          </StyledText>
         }
         contentContainerStyle={styles.listContent}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   container: { flexGrow: 1, alignItems: 'center', justifyContent: 'center' },
-  listContent: { padding: 20, flexGrow: 1 },
+  listContent: { paddingHorizontal: 16, paddingVertical: 20, flexGrow: 1 },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   articleItem: {
-    backgroundColor: '#f9f9f9',
     padding: 15,
     borderRadius: 8,
     marginBottom: 10,
@@ -101,7 +111,7 @@ const styles = StyleSheet.create({
     borderColor: '#eee',
   },
   articleTitle: { fontSize: 18, fontWeight: '600' },
-  articleStatus: { fontSize: 14, color: '#666', marginTop: 4 },
+  articleStatus: { fontSize: 14, marginTop: 4 },
   errorText: { color: 'red', textAlign: 'center' },
-  emptyText: { textAlign: 'center', color: '#888', marginTop: 40 },
+  emptyText: { textAlign: 'center', marginTop: 40 },
 });

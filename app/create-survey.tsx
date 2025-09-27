@@ -1,42 +1,44 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Screen } from '@/components/Screen';
 import { StyledButton } from '@/components/StyledButton';
 import { StyledText } from '@/components/StyledText';
 import { StyledTextInput } from '@/components/StyledTextInput';
 import { useAuth } from '@/context/AuthContext';
 import { firebaseRealtimeDb } from '@/firebaseConfig';
-import database from '@react-native-firebase/database';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { toastService } from '@/toastService';
 
 export default function CreateSurveyScreen() {
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']); // Start with two options
   const { user } = useAuth();
+  const backgroundColor = useThemeColor({}, 'background');
+  const insets = useSafeAreaInsets();
 
   const handlePostSurvey = () => {
     if (!question || options.some((opt) => !opt.trim())) {
-      Alert.alert('Missing Fields', 'Please enter a question and fill all option fields.');
+      toastService.showError('Please enter a question and fill all option fields.', 'Missing Fields');
       return;
     }
     if (!user) return;
 
-    const messagesRef = firebaseRealtimeDb.ref('/chat/messages').push();
+    const messagesRef = firebaseRealtimeDb().ref('/chat/messages').push();
     messagesRef.set({
       type: 'survey',
       question,
       options,
       author: user.displayName,
       authorId: user.uid,
-      avatar: user.photoURL,
-      createdAt: database.ServerValue.TIMESTAMP,
+      avatar: user.photoURL ?? null,
+      createdAt: firebaseRealtimeDb.ServerValue.TIMESTAMP,
       votes: { placeholder: -1 }, // Initialize votes object to ensure it exists
     });
 
-    Alert.alert('Survey Posted!', 'Your survey is now live in the company chat.', [
-      { text: 'OK', onPress: () => router.back() },
-    ]);
+    toastService.showSuccess('Your survey is now live in the company chat.', 'Survey Posted!');
+    router.back();
   };
 
   const handleOptionChange = (text: string, index: number) => {
@@ -52,36 +54,39 @@ export default function CreateSurveyScreen() {
   };
 
   return (
-    <Screen style={styles.container} contentContainerStyle={{ flexGrow: 1 }}>
-      <StyledText style={styles.title}>Create a Poll</StyledText>
-      <StyledTextInput
-        placeholder="What is your question?"
-        value={question}
-        onChangeText={setQuestion}
-        style={styles.questionInput}
-      />
-
-      <StyledText style={styles.optionsTitle}>Options</StyledText>
-      {options.map((option, index) => (
+    <View style={[styles.screenContainer, { backgroundColor, paddingTop: insets.top }]}>
+      <ScrollView style={styles.container} contentContainerStyle={{ flexGrow: 1 }}>
+        <StyledText style={styles.title}>Create a Poll</StyledText>
         <StyledTextInput
-          key={index}
-          placeholder={`Option ${index + 1}`}
-          value={option}
-          onChangeText={(text) => handleOptionChange(text, index)}
+          placeholder="What is your question?"
+          value={question}
+          onChangeText={setQuestion}
+          style={styles.questionInput}
         />
-      ))}
 
-      {options.length < 5 && <StyledButton title="Add Option" variant="secondary" onPress={addOption} />}
+        <StyledText style={styles.optionsTitle}>Options</StyledText>
+        {options.map((option, index) => (
+          <StyledTextInput
+            key={index}
+            placeholder={`Option ${index + 1}`}
+            value={option}
+            onChangeText={(text) => handleOptionChange(text, index)}
+          />
+        ))}
 
-      <View style={styles.actions}>
-        <StyledButton title="Post to Company Chat" onPress={handlePostSurvey} />
-        <StyledButton title="Cancel" variant="secondary" onPress={() => router.back()} />
-      </View>
-    </Screen>
+        {options.length < 5 && <StyledButton title="Add Option" variant="secondary" onPress={addOption} />}
+
+        <View style={styles.actions}>
+          <StyledButton title="Post to Company Chat" onPress={handlePostSurvey} />
+          <StyledButton title="Cancel" variant="secondary" onPress={() => router.back()} />
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContainer: { flex: 1 },
   container: { paddingHorizontal: 16 },
   title: { fontSize: 28, fontWeight: 'bold', marginVertical: 16 },
   questionInput: { marginBottom: 16 },

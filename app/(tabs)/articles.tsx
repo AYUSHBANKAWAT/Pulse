@@ -42,8 +42,8 @@ export default function ArticlesScreen() {
   useFocusEffect(
     useCallback(() => {
       setIsLoading(true);
-      let articlesQuery: any = firebaseDb
-        .collection('articles')
+      let articlesQuery: any = firebaseDb()
+        .collection('articles') // <-- Corrected call
         .where('status', '==', 'published');
 
       if (selectedCategory !== 'all') {

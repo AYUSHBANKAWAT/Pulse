@@ -37,11 +37,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // onAuthStateChanged returns an unsubscriber
-    const unsubscribeAuth = firebaseAuth.onAuthStateChanged((authUser) => {
+    const unsubscribeAuth = firebaseAuth().onAuthStateChanged((authUser) => {
       setUser(authUser);
       if (authUser) {
         // If user is logged in, listen for changes to their profile
-        const userDocRef = firebaseDb.collection('users').doc(authUser.uid);
+        const userDocRef = firebaseDb().collection('users').doc(authUser.uid);
         const unsubscribeProfile = userDocRef.onSnapshot((doc) => {
           setUserProfile(doc?.exists ? (doc.data() as UserProfile) : null);
           setIsLoading(false);

@@ -1,14 +1,15 @@
-import firestore from '@react-native-firebase/firestore';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/Card';
 import { StyledButton } from '@/components/StyledButton';
 import { StyledText } from '@/components/StyledText';
 import { useAuth } from '@/context/AuthContext';
+import { firebaseDb } from '@/firebaseConfig';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { toastService } from '@/toastService';
 
 export default function HomeScreen() {
   const [isCheckingIn, setIsCheckingIn] = useState(false);
@@ -18,26 +19,27 @@ export default function HomeScreen() {
 
   const handleCheckIn = async () => {
     if (!user) {
-      Alert.alert('Error', 'You must be logged in to check in.');
+      toastService.showError('You must be logged in to check in.');
       return;
     }
 
     setIsCheckingIn(true);
     try {
       // 1. Get all Expo push tokens from Firestore.
-      const tokensSnapshot = await firestore().collection('deviceTokens').get();
-
+      const tokensSnapshot = await firebaseDb().collection('deviceTokens').get();
+      // console.log('Fetched device tokens:', tokensSnapshot);
       const tokens: string[] = [];
       tokensSnapshot.forEach((doc) => {
         // Don't send a notification to the person who checked in.
         if (doc.data().uid !== user.uid) {
+          console.log('Adding token:', doc);
           tokens.push(doc.id);
         }
       });
-
+      console.log('Tokens to notify:', tokens);
       if (tokens.length === 0) {
         console.log('No other users to notify.');
-        Alert.alert('Success', 'You have checked in!');
+        toastService.showSuccess('You have checked in!');
         return;
       }
 
@@ -86,7 +88,7 @@ export default function HomeScreen() {
                 if (ticket.details?.error === 'DeviceNotRegistered') {
                   const invalidToken = ticket.details.expoPushToken;
                   console.log(`Removing invalid token from Firestore: ${invalidToken}`);
-                  firestore().collection('deviceTokens').doc(invalidToken).delete();
+                  firebaseDb().collection('deviceTokens').doc(invalidToken).delete();
                 } else {
                   console.error(`Error sending notification: ${ticket.message}`, ticket.details);
                 }
@@ -97,10 +99,10 @@ export default function HomeScreen() {
       );
 
       console.log(`Successfully sent notifications to ${tokens.length} devices.`);
-      Alert.alert('Success', 'Check-in successful! Notifications have been sent.');
+      toastService.showSuccess('Check-in successful! Notifications have been sent.');
     } catch (error: any) {
       console.error('Failed to send notifications:', error);
-      Alert.alert('Error', 'Could not send notifications. Please try again.');
+      toastService.showError('Could not send notifications. Please try again.');
     } finally {
       setIsCheckingIn(false);
     }

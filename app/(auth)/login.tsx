@@ -1,11 +1,11 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { Screen } from '@/components/Screen';
 import { StyledButton } from '@/components/StyledButton';
 import { StyledText } from '@/components/StyledText';
 import { StyledTextInput } from '@/components/StyledTextInput';
+import { toastService } from '@/toastService';
 import { firebaseAuth } from '../../firebaseConfig';
 
 export default function LoginScreen() {
@@ -15,11 +15,11 @@ export default function LoginScreen() {
 
   const handleLogin = () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password.');
+      toastService.showError('Please enter both email and password.');
       return;
     }
     setIsLoading(true);
-    firebaseAuth
+    firebaseAuth()
       .signInWithEmailAndPassword(email, password)
       .then((userCredential) => {
         // Signed in
@@ -27,7 +27,7 @@ export default function LoginScreen() {
         router.replace('/(tabs)');
       })
       .catch((error) => {
-        Alert.alert('Login Error', error.message);
+        toastService.showError(error.message, 'Login Error');
         console.log('Error',error.message)
       })
       .finally(() => {
@@ -36,7 +36,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <Screen contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
         <StyledText style={styles.title}>Pulse</StyledText>
         <StyledText style={styles.subtitle}>Welcome back. Sign in to continue.</StyledText>
@@ -60,7 +60,7 @@ export default function LoginScreen() {
           Don't have an account? <StyledText style={styles.link}>Sign Up</StyledText>
         </StyledText>
       </View>
-    </Screen>
+    </ScrollView>
   );
 }
 
