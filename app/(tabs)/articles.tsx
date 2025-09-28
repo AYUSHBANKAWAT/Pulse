@@ -7,10 +7,17 @@ import { StyledTextInput } from '@/components/StyledTextInput';
 import { Colors } from '@/constants/Colors';
 import { firebaseDb } from '@/firebaseConfig';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { collection, onSnapshot, orderBy, query, where } from '@react-native-firebase/firestore';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  FlatList,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export interface Article {
@@ -23,6 +30,7 @@ export interface Article {
   content: string;
   likeCount: number;
 }
+
 const CATEGORIES: DropdownOption[] = [
   { label: 'All', value: 'all' },
   { label: 'Wellness', value: 'wellness' },
@@ -42,15 +50,27 @@ export default function ArticlesScreen() {
   useFocusEffect(
     useCallback(() => {
       setIsLoading(true);
-      let articlesQuery: any = firebaseDb()
-        .collection('articles') // <-- Corrected call
-        .where('status', '==', 'published');
+      const articlesCollection = collection(firebaseDb, 'articles');
+
+      let articlesQuery;
 
       if (selectedCategory !== 'all') {
-        articlesQuery = articlesQuery.where('category', '==', selectedCategory);
+        articlesQuery = query(
+          articlesCollection,
+          where('status', '==', 'published'),
+          where('category', '==', selectedCategory),
+          orderBy('createdAt', 'desc')
+        );
+      } else {
+        articlesQuery = query(
+          articlesCollection,
+          where('status', '==', 'published'),
+          orderBy('createdAt', 'desc')
+        );
       }
 
-      const unsubscribe = articlesQuery.orderBy('createdAt', 'desc').onSnapshot(
+      const unsubscribe = onSnapshot(
+        articlesQuery,
         (querySnapshot) => {
           const fetchedArticles = querySnapshot.docs.map(
             (doc) => ({ id: doc.id, ...doc.data() }) as Article
@@ -73,18 +93,29 @@ export default function ArticlesScreen() {
       <Card style={styles.articleCard}>
         <StyledText style={styles.articleTitle}>{item.title}</StyledText>
         <StyledText style={styles.articleAuthor}>
-          By {item.authorName} in <StyledText style={{ fontWeight: 'bold' }}>{item.category}</StyledText>
+          By {item.authorName} in{' '}
+          <StyledText style={{ fontWeight: 'bold' }}>
+            {item.category}
+          </StyledText>
         </StyledText>
       </Card>
     </Pressable>
   );
 
-  const ListHeader = () => (
-    <View style={{ paddingHorizontal: 16 }}>
-        <StyledText style={styles.header}>Articles</StyledText>
-        <StyledTextInput placeholder="Search articles..." />
-        <View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
+  return (
+    <>
+      <View
+        style={[styles.container, { backgroundColor, paddingTop: insets.top }]}
+      >
+        {/* Fixed Header */}
+        <View style={styles.fixedHeader}>
+          <StyledText style={styles.header}>Articles</StyledText>
+          <StyledTextInput placeholder="Search articles..." />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoriesContainer}
+          >
             {CATEGORIES.map((cat) => (
               <StyledButton
                 key={cat.value}
@@ -96,37 +127,29 @@ export default function ArticlesScreen() {
             ))}
           </ScrollView>
         </View>
-    </View>
-  );
 
-  return (
-    <>
-      <View style={[styles.container, { backgroundColor, paddingTop: insets.top }]}>
-        {/* Fixed Header */}
-      <View style={styles.fixedHeader}>
-        <StyledText style={styles.header}>Articles</StyledText>
-        <StyledTextInput placeholder="Search articles..." />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
-          {CATEGORIES.map((cat) => (
-            <StyledButton
-              key={cat.value}
-              title={cat.label}
-              variant={selectedCategory === cat.value ? 'primary' : 'secondary'}
-              style={styles.categoryButton}
-              onPress={() => setSelectedCategory(cat.value)}
-            />
-          ))}
-        </ScrollView>
-      </View>
         <FlatList
-          data={isLoading ? Array.from({ length: 4 }) : articles}  
+          data={isLoading ? Array.from({ length: 4 }) : articles}
           renderItem={isLoading ? () => <ArticleCardPlaceholder /> : renderArticle}
-          keyExtractor={(item, index) => (isLoading ? index.toString() : item.id)}
+          keyExtractor={(item, index) =>
+            isLoading ? index.toString() : item.id
+          }
           contentContainerStyle={{ paddingBottom: insets.top + 80 }}
         />
       </View>
-      <Pressable style={[styles.fab, { backgroundColor: Colors[colorScheme].accent }]} onPress={() => router.push('/article/write')}>
-        <StyledText style={[styles.fabText, { color: Colors[colorScheme].buttonText }]}>+</StyledText>
+
+      <Pressable
+        style={[
+          styles.fab,
+          { backgroundColor: Colors[colorScheme].accent },
+        ]}
+        onPress={() => router.push('/article/write')}
+      >
+        <StyledText
+          style={[styles.fabText, { color: Colors[colorScheme].buttonText }]}
+        >
+          +
+        </StyledText>
       </Pressable>
     </>
   );
@@ -138,11 +161,7 @@ const styles = StyleSheet.create({
   },
   fixedHeader: {
     paddingHorizontal: 16,
-    // Adapt height as needed
     paddingBottom: 8,
-    // borderBottomColor: '#ccc',
-    // borderBottomWidth: 1,
-    // Elevation/shadow for iOS and Android if desired
     elevation: 2,
     shadowColor: '#000',
     shadowOpacity: 0.1,

@@ -9,7 +9,8 @@ import { StyledText } from '@/components/StyledText';
 import { useAuth } from '@/context/AuthContext';
 import { firebaseAuth, firebaseDb } from '@/firebaseConfig';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { toastService } from '@/toastService';
+import { toastService } from '@/services/toastService';
+import { collectionGroup, onSnapshot, query, where } from '@react-native-firebase/firestore';
 
 export default function ProfileScreen() {
   const { user, userProfile } = useAuth();
@@ -22,19 +23,18 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (!user) return;
 
-    const unsubscribe = firebaseDb()
-      .collectionGroup('articles')
-      .where('authorId', '==', user.uid)
-      .where('status', '==', 'published')
-      .onSnapshot((querySnapshot) => {
-        setPublishedArticleCount(querySnapshot?.size || 0);
-      });
+    const articlesQuery = query(
+      collectionGroup(firebaseDb, 'articles'),
+      where('authorId', '==', user.uid),
+      where('status', '==', 'published')
+    );
+    const unsubscribe = onSnapshot(articlesQuery, (querySnapshot) => setPublishedArticleCount(querySnapshot?.size ?? 0));
 
     return () => unsubscribe();
   }, [user]);
 
   const handleLogout = () => {
-    firebaseAuth().signOut().catch((error) => {
+    firebaseAuth.signOut().catch((error) => {
       console.error('Sign out error', error);
       toastService.showError('Failed to sign out.');
     });

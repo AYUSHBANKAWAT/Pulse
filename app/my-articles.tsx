@@ -1,5 +1,6 @@
 import { useAuth } from '@/context/AuthContext';
 import { firebaseDb } from '@/firebaseConfig';
+import { collectionGroup, onSnapshot, orderBy, query, where } from '@react-native-firebase/firestore';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -34,26 +35,25 @@ export default function MyArticlesScreen() {
 
     // This sets up a real-time listener for the user's articles.
     // It uses a collectionGroup query, which is powerful but often requires a custom index.
-    const unsubscribe = firebaseDb()
-      .collectionGroup('articles')
-      .where('authorId', '==', user.uid)
-      .orderBy('createdAt', 'desc')
-      .onSnapshot(
-        (querySnapshot) => {
-          const userArticles: Article[] = [];
-          querySnapshot.forEach((doc) => {
-            userArticles.push({ id: doc.id, ...doc.data() } as Article);
-          });
-          setArticles(userArticles);
-          setLoading(false);
-        },
-        (err) => {
-          console.error(err);
-          // The most likely error here is the missing index!
-          setError('Failed to fetch articles. You may need to create a Firestore index.');
-          setLoading(false);
-        }
-      );
+    const articlesQuery = query(
+      collectionGroup(firebaseDb, 'articles'),
+      where('authorId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(articlesQuery, (querySnapshot) => {
+      const userArticles: Article[] = [];
+      querySnapshot.forEach((doc) => {
+        userArticles.push({ id: doc.id, ...doc.data() } as Article);
+      });
+      setArticles(userArticles);
+      setLoading(false);
+    }, (err) => {
+      console.error(err);
+      // The most likely error here is the missing index!
+      setError('Failed to fetch articles. You may need to create a Firestore index.');
+      setLoading(false);
+    });
 
     // Cleanup the listener when the component unmounts
     return () => unsubscribe();

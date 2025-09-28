@@ -1,5 +1,6 @@
 import { firebaseAuth, firebaseDb } from '@/firebaseConfig';
 import type { User } from '@react-native-firebase/auth';
+import { doc, onSnapshot } from '@react-native-firebase/firestore';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 // Define a type for our custom user profile data from Firestore
@@ -36,18 +37,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let unsubscribeProfile: (() => void) | undefined;
+
     // onAuthStateChanged returns an unsubscriber
-    const unsubscribeAuth = firebaseAuth().onAuthStateChanged((authUser) => {
+    const unsubscribeAuth = firebaseAuth.onAuthStateChanged((authUser) => {
       setUser(authUser);
+
+      // Clean up the previous profile listener if it exists
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+      }
+
       if (authUser) {
         // If user is logged in, listen for changes to their profile
-        const userDocRef = firebaseDb().collection('users').doc(authUser.uid);
-        const unsubscribeProfile = userDocRef.onSnapshot((doc) => {
-          setUserProfile(doc?.exists ? (doc.data() as UserProfile) : null);
+        const userDocRef = doc(firebaseDb, 'users', authUser.uid);
+        unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
+          setUserProfile(docSnap?.exists() ? (docSnap.data() as UserProfile) : null);
           setIsLoading(false);
         });
-        // Return a function to unsubscribe from profile listener when auth state changes
-        return unsubscribeProfile;
       } else {
         // User is logged out
         setUserProfile(null);
@@ -56,7 +63,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Unsubscribe to the listener when unmounting
-    return unsubscribeAuth;
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+      }
+    };
   }, []);
 
   return (

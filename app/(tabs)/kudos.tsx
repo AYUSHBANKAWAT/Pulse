@@ -10,6 +10,7 @@ import { StyledText } from '@/components/StyledText';
 import { UserProfile } from '@/context/AuthContext';
 import { firebaseDb } from '@/firebaseConfig';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { collection, limit, orderBy, query } from '@react-native-firebase/firestore';
 import { useFocusEffect } from '@react-navigation/native';
 
 interface Kudo {
@@ -33,21 +34,20 @@ export default function KudosScreen() {
     useCallback(() => {
       setIsLoading(true);
 
-      const kudosQuery = firebaseDb().collection('kudos').orderBy('createdAt', 'desc');
+      const kudosQuery = query(collection(firebaseDb, 'kudos'), orderBy('createdAt', 'desc'));
       const unsubscribeKudos = kudosQuery.onSnapshot((snapshot) => {
         const fetchedKudos = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Kudo);
         setKudosFeed(fetchedKudos);
         setIsLoading(false); // Can set loading false here
       });
 
-      const leaderboardQuery = firebaseDb()
-        .collection('users')
-        .orderBy('kudosReceived', 'desc')
-        .limit(3);
+      const leaderboardQuery = query(
+        collection(firebaseDb, 'users'),
+        orderBy('kudosReceived', 'desc'),
+        limit(3)
+      );
       const unsubscribeLeaderboard = leaderboardQuery.onSnapshot((snapshot) => {
-        const fetchedUsers = snapshot.docs.map(
-          (doc) => doc.data() as UserProfile
-        );
+        const fetchedUsers = snapshot.docs.map((doc) => doc.data() as UserProfile);
         setLeaderboard(fetchedUsers);
       });
 

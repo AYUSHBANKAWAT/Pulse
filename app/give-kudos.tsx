@@ -10,7 +10,18 @@ import { StyledTextInput } from '@/components/StyledTextInput';
 import { useAuth } from '@/context/AuthContext';
 import { firebaseDb } from '@/firebaseConfig';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { toastService } from '@/toastService';
+import { toastService } from '@/services/toastService';
+import {
+  collection,
+  doc,
+  getDocs,
+  increment,
+  query,
+  serverTimestamp,
+  setDoc,
+  where,
+  writeBatch,
+} from '@react-native-firebase/firestore';
 
 interface AppUser {
   uid: string;
@@ -32,7 +43,8 @@ export default function GiveKudosScreen() {
       if (!currentUser) return;
       console.log('Fetching users for kudos...',currentUser);
       try {
-        const usersSnapshot = await firebaseDb().collection('users').get();
+        const usersCollection = collection(firebaseDb, 'users');
+        const usersSnapshot = await getDocs(usersCollection);
         const fetchedUsers = (usersSnapshot?.docs || [])
           .map((doc) => doc.data() as AppUser)
           .filter((u) => u.uid !== currentUser.uid) // Exclude current user
@@ -65,35 +77,37 @@ export default function GiveKudosScreen() {
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      const kudosRef = firebaseDb().collection('kudos');
-      const monthlyKudosQuery = await kudosRef
-        .where('fromId', '==', currentUser.uid)
-        .where('createdAt', '>=', startOfMonth)
-        .get();
+      const kudosCollection = collection(firebaseDb, 'kudos');
+      const monthlyKudosQuery = query(
+        kudosCollection,
+        where('fromId', '==', currentUser.uid),
+        where('createdAt', '>=', startOfMonth)
+      );
+      const monthlyKudosSnapshot = await getDocs(monthlyKudosQuery);
 
-      if (monthlyKudosQuery.size >= 2) {
+      if (monthlyKudosSnapshot.size >= 2) {
         toastService.showError('You have already sent 2 kudos this month.', 'Limit Reached');
         setIsLoading(false);
         return;
       }
 
       // Use a batched write to perform both operations atomically
-      const batch = firebaseDb().batch();
+      const batch = writeBatch(firebaseDb);
       console.log('Sending kudos to:', recipient, 'with message:', message,' from user:', currentUser);
       // 1. Create the new kudo document
-      const newKudoRef = kudosRef.doc();
-      batch.set(newKudoRef, {
+      const newKudoRef = doc(kudosCollection); // Create a new doc with a random ID
+      setDoc(newKudoRef, {
         fromId: currentUser.uid,
         fromName: currentUser.displayName || 'Anonymous User',
         toId: recipient.value,
         toName: recipient.label,
         message,
-        createdAt: firebaseDb.FieldValue.serverTimestamp(),
+        createdAt: serverTimestamp(),
       });
 
       // 2. Increment the kudos count for the recipient
-      const userToUpdateRef = firebaseDb().collection('users').doc(recipient.value);
-      batch.update(userToUpdateRef, { kudosReceived: firebaseDb.FieldValue.increment(1) });
+      const userToUpdateRef = doc(firebaseDb, 'users', recipient.value);
+      batch.update(userToUpdateRef, { kudosReceived: increment(1) });
 
       // Commit the batch
       await batch.commit();

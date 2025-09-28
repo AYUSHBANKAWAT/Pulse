@@ -9,7 +9,8 @@ import { StyledTextInput } from '@/components/StyledTextInput';
 import { useAuth } from '@/context/AuthContext';
 import { firebaseDb } from '@/firebaseConfig';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { toastService } from '@/toastService';
+import { toastService } from '@/services/toastService';
+import { addDoc, collection, serverTimestamp } from '@react-native-firebase/firestore';
 
 const ARTICLE_CATEGORIES: DropdownOption[] = [
   { label: 'Wellness', value: 'wellness' },
@@ -44,13 +45,14 @@ export default function WriteArticleScreen() {
     }
 
     try {
-      await firebaseDb().collection('articles').add({
+      const articlesCollection = collection(firebaseDb, 'articles');
+      await addDoc(articlesCollection, {
         title,
         category: category?.value || 'uncategorized',
         content,
         authorId: user.uid,
         authorName: user.displayName,
-        createdAt: firebaseDb.FieldValue.serverTimestamp(),
+        createdAt: serverTimestamp(),
         likeCount: 0,
         status,
       });

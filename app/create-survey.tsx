@@ -9,7 +9,8 @@ import { StyledTextInput } from '@/components/StyledTextInput';
 import { useAuth } from '@/context/AuthContext';
 import { firebaseRealtimeDb } from '@/firebaseConfig';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { toastService } from '@/toastService';
+import { toastService } from '@/services/toastService';
+import { push, ref, serverTimestamp, set } from '@react-native-firebase/database';
 
 export default function CreateSurveyScreen() {
   const [question, setQuestion] = useState('');
@@ -25,15 +26,16 @@ export default function CreateSurveyScreen() {
     }
     if (!user) return;
 
-    const messagesRef = firebaseRealtimeDb().ref('/chat/messages').push();
-    messagesRef.set({
+    const messagesListRef = ref(firebaseRealtimeDb, '/chat/messages');
+    const newMessageRef = push(messagesListRef);
+    set(newMessageRef, {
       type: 'survey',
       question,
       options,
       author: user.displayName,
       authorId: user.uid,
       avatar: user.photoURL ?? null,
-      createdAt: firebaseRealtimeDb.ServerValue.TIMESTAMP,
+      createdAt: serverTimestamp(),
       votes: { placeholder: -1 }, // Initialize votes object to ensure it exists
     });
 

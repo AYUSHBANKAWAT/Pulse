@@ -13,6 +13,7 @@ import { StyledTextInput } from '@/components/StyledTextInput';
 import { useAuth } from '@/context/AuthContext';
 import { firebaseRealtimeDb } from '@/firebaseConfig';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { limitToLast, onValue, push, query, ref, serverTimestamp, set } from '@react-native-firebase/database';
 
 interface Message {
   id: string;
@@ -57,8 +58,8 @@ const SurveyItem = ({ item }: { item: Message }) => {
   const handleVote = (optionIndex: number) => {
     if (!user || hasVoted || !item.id) return;
 
-    const voteRef = firebaseRealtimeDb().ref(`/chat/messages/${item.id}/votes/${user.uid}`);
-    voteRef.set(optionIndex).catch((error) => {
+    const voteRef = ref(firebaseRealtimeDb, `/chat/messages/${item.id}/votes/${user.uid}`);
+    set(voteRef, optionIndex).catch((error) => {
       console.error('Error voting:', error);
     });
   };
@@ -120,9 +121,9 @@ export default function CompanyChatScreen() {
   const { user } = useAuth();
 
   useEffect(() => {
-    const messagesRef = firebaseRealtimeDb().ref('/chat/messages').limitToLast(50);
+    const messagesQuery = query(ref(firebaseRealtimeDb, '/chat/messages'), limitToLast(50));
 
-    const onValueChange = messagesRef.on('value', (snapshot) => {
+    const unsubscribe = onValue(messagesQuery, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         const messageList = Object.keys(data)
@@ -137,20 +138,21 @@ export default function CompanyChatScreen() {
     });
 
     // Stop listening for updates when no longer required
-    return () => messagesRef.off('value', onValueChange);
+    return () => unsubscribe();
   }, []);
 
   const handleSendMessage = () => {
     if (!message.trim() || !user) return;
 
-    const messagesRef = firebaseRealtimeDb().ref('/chat/messages').push();
-    messagesRef.set({
+    const messagesListRef = ref(firebaseRealtimeDb, '/chat/messages');
+    const newMessageRef = push(messagesListRef);
+    set(newMessageRef, {
       type: 'text',
       text: message,
       author: user.displayName,
       authorId: user.uid,
       avatar: user.photoURL,
-      createdAt: firebaseRealtimeDb.ServerValue.TIMESTAMP,
+      createdAt: serverTimestamp(),
     });
 
     setMessage('');

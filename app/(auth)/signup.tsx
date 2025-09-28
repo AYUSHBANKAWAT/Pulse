@@ -1,3 +1,4 @@
+import { createUserWithEmailAndPassword, updateProfile } from '@react-native-firebase/auth';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -6,8 +7,9 @@ import { StyledButton } from '@/components/StyledButton';
 import { StyledDropdown, type DropdownOption } from '@/components/StyledDropdown';
 import { StyledText } from '@/components/StyledText';
 import { StyledTextInput } from '@/components/StyledTextInput';
-import { toastService } from '@/toastService';
-import { firebaseAuth, firebaseDb } from '../../firebaseConfig';
+import { firebaseAuth, firebaseDb } from '@/firebaseConfig';
+import { toastService } from '@/services/toastService';
+import { doc, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
 
 const LOCATION_OPTIONS: DropdownOption[] = [
   { label: 'Delhi', value: 'delhi' },
@@ -30,21 +32,20 @@ export default function SignUpScreen() {
       return;
     }
     setIsLoading(true);
-    firebaseAuth()
-      .createUserWithEmailAndPassword(email, password)
+    createUserWithEmailAndPassword(firebaseAuth, email, password)
       .then((userCredential) => {
         const user = userCredential.user;
         // Create promises for both profile update and Firestore write
-        const profileUpdatePromise = user.updateProfile({
+        const profileUpdatePromise = updateProfile(user, {
           displayName: fullName,
         });
-        const firestorePromise = firebaseDb().collection('users').doc(user.uid).set({
+        const firestorePromise = setDoc(doc(firebaseDb, 'users', user.uid), {
           uid: user.uid,
           fullName: fullName,
           email: email,
           photoURL: user.photoURL, // Add photoURL during creation
           baseLocation: baseLocation.value, // Save the selected location value
-          createdAt: firebaseDb.FieldValue.serverTimestamp(),
+          createdAt: serverTimestamp(),
           kudosReceived: 0,
         });
         return Promise.all([profileUpdatePromise, firestorePromise]);

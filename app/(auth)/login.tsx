@@ -1,3 +1,4 @@
+import { signInWithEmailAndPassword } from '@react-native-firebase/auth';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -5,8 +6,8 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { StyledButton } from '@/components/StyledButton';
 import { StyledText } from '@/components/StyledText';
 import { StyledTextInput } from '@/components/StyledTextInput';
-import { toastService } from '@/toastService';
-import { firebaseAuth } from '../../firebaseConfig';
+import { firebaseAuth } from '@/firebaseConfig';
+import { toastService } from '@/services/toastService';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -19,8 +20,7 @@ export default function LoginScreen() {
       return;
     }
     setIsLoading(true);
-    firebaseAuth()
-      .signInWithEmailAndPassword(email, password)
+    signInWithEmailAndPassword(firebaseAuth, email, password)
       .then((userCredential) => {
         // Signed in
         console.log('User signed in!', userCredential.user);

@@ -1,5 +1,6 @@
 import { useAuth } from '@/context/AuthContext';
 import { firebaseDb } from '@/firebaseConfig';
+import { doc, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
@@ -68,11 +69,11 @@ export function useNotifications() {
             console.log('Attempting to save Expo Push Token to Firestore:', token, 'for user:', user.uid);
             setExpoPushToken(token);
             // Save the token to Firestore, using the token itself as the document ID.
-            const tokenRef = firebaseDb().collection('deviceTokens').doc(token);
-            await tokenRef.set({
+            const tokenRef = doc(firebaseDb, 'deviceTokens', token);
+            await setDoc(tokenRef, {
               expoPushToken: token, // Store the token explicitly in the document data as well
               uid: user.uid,
-              createdAt: firebaseDb.FieldValue.serverTimestamp(),
+              createdAt: serverTimestamp(),
             });
           }
         } catch (error) {

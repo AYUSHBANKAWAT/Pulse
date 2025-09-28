@@ -12,7 +12,18 @@ import { StyledTextInput } from '@/components/StyledTextInput';
 import { useAuth } from '@/context/AuthContext';
 import { firebaseDb } from '@/firebaseConfig';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { toastService } from '@/toastService';
+import { toastService } from '@/services/toastService';
+import {
+  addDoc,
+  collection,
+  doc,
+  increment,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  updateDoc,
+} from '@react-native-firebase/firestore';
 import type { Article } from '../(tabs)/articles';
 
 export interface Comment {
@@ -43,21 +54,21 @@ export default function ArticleDetailScreen() {
       return;
     }
 
-    const docRef = firebaseDb().collection('articles').doc(id as string);
+    const docRef = doc(firebaseDb, 'articles', id as string);
 
-    const unsubscribeArticle = docRef.onSnapshot((doc) => {
-      if (doc.exists) {
-        setArticle({ id: doc.id, ...doc.data() } as Article);
+    const unsubscribeArticle = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setArticle({ id: docSnap.id, ...docSnap.data() } as Article);
       } else {
         setArticle(undefined);
       }
       setIsLoading(false);
     });
 
-    const commentsQuery = docRef.collection('comments').orderBy('createdAt', 'desc');
+    const commentsCollection = collection(docRef, 'comments');
+    const commentsQuery = query(commentsCollection, orderBy('createdAt', 'desc'));
 
-    const unsubscribeComments = commentsQuery.onSnapshot((snapshot) => {
-      if (!snapshot) return;
+    const unsubscribeComments = onSnapshot(commentsQuery, (snapshot) => {
 
       const fetchedComments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Comment);
       setComments(fetchedComments);
@@ -72,10 +83,10 @@ export default function ArticleDetailScreen() {
 
   const handleLike = async () => {
     if (!id || !user) return;
-    const docRef = firebaseDb().collection('articles').doc(id as string);
+    const docRef = doc(firebaseDb, 'articles', id as string);
     try {
-      await docRef.update({
-        likeCount: firebaseDb.FieldValue.increment(1),
+      await updateDoc(docRef, {
+        likeCount: increment(1),
       });
     } catch (error) {
       console.error('Error liking article: ', error);
@@ -91,10 +102,11 @@ export default function ArticleDetailScreen() {
         text: newComment,
         authorId: user.uid,
         authorName: user.displayName,
-        createdAt: firebaseDb.FieldValue.serverTimestamp(),
+        createdAt: serverTimestamp(),
       };
       console.log('Posting comment: ', newCommentData, id as string);
-      await firebaseDb().collection('articles').doc(id as string).collection('comments').add(newCommentData);
+      const commentsCollection = collection(firebaseDb, 'articles', id as string, 'comments');
+      await addDoc(commentsCollection, newCommentData);
       setNewComment(''); // Clear input
     } catch (error) {
       console.error('Error posting comment: ', error);
