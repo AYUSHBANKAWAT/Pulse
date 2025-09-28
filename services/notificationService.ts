@@ -1,12 +1,12 @@
 import { firebaseDb } from '@/firebaseConfig';
-import type { User } from '@react-native-firebase/auth';
+import type { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { collection, deleteDoc, doc, getDocs } from '@react-native-firebase/firestore';
 
 /**
  * Fetches all device tokens from Firestore and sends a check-in notification.
  * @param user The user who is checking in.
  */
-export async function sendCheckInNotification(user: User) {
+export async function sendCheckInNotification(user: FirebaseAuthTypes.User) {
   // 1. Get all Expo push tokens from Firestore.
   const tokensCollection = collection(firebaseDb, 'deviceTokens');
   const tokensSnapshot = await getDocs(tokensCollection);
