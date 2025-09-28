@@ -1,13 +1,14 @@
 import { createUserWithEmailAndPassword, updateProfile } from '@react-native-firebase/auth';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 
 import { StyledButton } from '@/components/StyledButton';
 import { StyledDropdown, type DropdownOption } from '@/components/StyledDropdown';
 import { StyledText } from '@/components/StyledText';
 import { StyledTextInput } from '@/components/StyledTextInput';
 import { firebaseAuth, firebaseDb } from '@/firebaseConfig';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { toastService } from '@/services/toastService';
 import { doc, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
 
@@ -25,6 +26,7 @@ export default function SignUpScreen() {
   const [password, setPassword] = useState('');
   const [baseLocation, setBaseLocation] = useState<DropdownOption | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const backgroundColor = useThemeColor({}, 'background');
 
   const handleSignUp = () => {
     if (!email || !password || !fullName || !baseLocation) {
@@ -63,43 +65,48 @@ export default function SignUpScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        <StyledText style={styles.title}>Create Account</StyledText>
-        <StyledText style={styles.subtitle}>Let's get you started.</StyledText>
-      </View>
+    <KeyboardAvoidingView
+      style={[styles.screen, { backgroundColor }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.header}>
+          <StyledText style={styles.title}>Create Account</StyledText>
+          <StyledText style={styles.subtitle}>Let's get you started.</StyledText>
+        </View>
 
-      <View style={styles.form}>
-        <StyledTextInput placeholder="Full Name" value={fullName} onChangeText={setFullName} />
-        <StyledTextInput
-          placeholder="Email Address"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <StyledTextInput placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
-        <StyledDropdown
-          options={LOCATION_OPTIONS}
-          placeholder="Select Base Location"
-          selectedValue={baseLocation?.value}
-          onSelect={setBaseLocation}
-        />
-        <StyledButton title="Create Account" onPress={handleSignUp} loading={isLoading} style={{ marginTop: 16 }} />
-      </View>
+        <View style={styles.form}>
+          <StyledTextInput placeholder="Full Name" value={fullName} onChangeText={setFullName} />
+          <StyledTextInput
+            placeholder="Email Address"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <StyledTextInput placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
+          <StyledDropdown
+            options={LOCATION_OPTIONS}
+            placeholder="Select Base Location"
+            selectedValue={baseLocation?.value}
+            onSelect={setBaseLocation}
+          />
+          <StyledButton title="Create Account" onPress={handleSignUp} loading={isLoading} style={{ marginTop: 16 }} />
+        </View>
 
-      <View style={styles.footer}>
-        <StyledText style={styles.footerText} onPress={() => router.back()}>
-          Already have an account? <StyledText style={styles.link}>Sign In</StyledText>
-        </StyledText>
-      </View>
-    </ScrollView>
+        <View style={styles.footer}>
+          <StyledText style={styles.footerText} onPress={() => router.back()}>
+            Already have an account? <StyledText style={styles.link}>Sign In</StyledText>
+          </StyledText>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
   container: {
-    flex: 1,
+    flexGrow: 1,
     padding: 24,
     justifyContent: 'space-between',
   },

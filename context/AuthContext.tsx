@@ -1,5 +1,5 @@
 import { firebaseAuth, firebaseDb } from '@/firebaseConfig';
-import type { User } from '@react-native-firebase/auth';
+import { FirebaseAuthTypes, onAuthStateChanged } from '@react-native-firebase/auth';
 import { doc, onSnapshot } from '@react-native-firebase/firestore';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
@@ -14,7 +14,7 @@ export interface UserProfile {
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: FirebaseAuthTypes.User | null;
   userProfile: UserProfile | null;
   isLoading: boolean;
 }
@@ -32,7 +32,7 @@ export function useAuth() {
 
 // The provider component that wraps the app and provides auth state
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let unsubscribeProfile: (() => void) | undefined;
 
     // onAuthStateChanged returns an unsubscriber
-    const unsubscribeAuth = firebaseAuth.onAuthStateChanged((authUser) => {
+    const unsubscribeAuth = onAuthStateChanged(firebaseAuth, (authUser) => {
       setUser(authUser);
 
       // Clean up the previous profile listener if it exists

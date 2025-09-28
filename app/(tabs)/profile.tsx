@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { firebaseAuth, firebaseDb } from '@/firebaseConfig';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { toastService } from '@/services/toastService';
+import { signOut } from '@react-native-firebase/auth';
 import { collectionGroup, onSnapshot, query, where } from '@react-native-firebase/firestore';
 
 export default function ProfileScreen() {
@@ -34,7 +35,7 @@ export default function ProfileScreen() {
   }, [user]);
 
   const handleLogout = () => {
-    firebaseAuth.signOut().catch((error) => {
+    signOut(firebaseAuth).catch((error) => {
       console.error('Sign out error', error);
       toastService.showError('Failed to sign out.');
     });
