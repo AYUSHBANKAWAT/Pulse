@@ -11,9 +11,12 @@ module.exports = function (api) {
             '@': './',
           },
         },
+        { alias: { '@': './' } },
       ],
       // Reanimated plugin has been moved to 'react-native-worklets'
       'react-native-worklets/plugin',
+      // This plugin must be listed last.
+      'react-native-reanimated/plugin',
     ],
   };
 };
