@@ -1,7 +1,7 @@
 import { signInWithEmailAndPassword } from '@react-native-firebase/auth';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { StyledButton } from '@/components/StyledButton';
 import { StyledText } from '@/components/StyledText';
@@ -15,6 +15,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const backgroundColor = useThemeColor({}, 'background');
+  const { height } = useWindowDimensions();
 
   const handleLogin = () => {
     if (!email || !password) {
@@ -38,12 +39,11 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.screen, { backgroundColor }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <StyledText style={styles.title}>Pulse</StyledText>
+    <View
+      style={[styles.screen, { backgroundColor }]}>
+      <ScrollView contentContainerStyle={[styles.container, { minHeight: height }]}>
+        <View style={[styles.header, { alignItems: 'center' }]}>
+          <Image source={require('@/assets/images/AppIcon2.png')} style={styles.logo} />
           <StyledText style={styles.subtitle}>Welcome back. Sign in to continue.</StyledText>
         </View>
 
@@ -70,32 +70,30 @@ export default function LoginScreen() {
           </StyledText>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   container: {
-    flexGrow: 1,
     padding: 24,
-    justifyContent: 'space-between',
-  },
-  header: {
-    flex: 1,
     justifyContent: 'center',
   },
+  header: {
+    justifyContent: 'center',
+    marginBottom: 48,
+  },
   form: {
-    flex: 2,
     justifyContent: 'center',
   },
   footer: {
-    paddingBottom: 16,
+    marginTop: 48,
   },
-  title: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    textAlign: 'center',
+  logo: {
+    width: 250,
+    height: 250,
+    resizeMode:'contain',
   },
   subtitle: {
     fontSize: 16,

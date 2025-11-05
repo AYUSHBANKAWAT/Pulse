@@ -1,37 +1,78 @@
+import BottomSheet from '@gorhom/bottom-sheet';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/Card';
+import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { StyledButton } from '@/components/StyledButton';
 import { StyledText } from '@/components/StyledText';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTrendingFeed } from '@/hooks/useTrendingFeed';
 import { sendCheckInNotification } from '@/services/notificationService';
 import { toastService } from '@/services/toastService';
+
+const STATUS_OPTIONS = [/* ... */]; // Assuming this is defined as in previous steps
 
 export default function HomeScreen() {
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const backgroundColor = useThemeColor({}, 'background');
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => ['25%', '50%'], []);
+  const cardColor = useThemeColor({}, 'cardBackground');
+  const accentColor = useThemeColor({}, 'accent');
 
-  const handleCheckIn = async () => {
+  const { trendingItems, isLoading: isTrendingLoading } = useTrendingFeed();
+
+  const handleStatusUpdate = async (status: 'in-office' | 'wfh' | 'sick' | 'ooo') => {
     if (!user) {
-      toastService.showError('You must be logged in to check in.');
+      toastService.showError('You must be logged in to update your status.');
       return;
     }
 
+    bottomSheetRef.current?.close();
     setIsCheckingIn(true);
     try {
-      await sendCheckInNotification(user);
-      toastService.showSuccess('Check-in successful! Notifications have been sent.');
+      await sendCheckInNotification(user, status);
+      toastService.showSuccess('Your team has been notified of your status.');
     } catch (error: any) {
       console.error('Failed to send notifications:', error);
       toastService.showError('Could not send notifications. Please try again.');
     } finally {
       setIsCheckingIn(false);
+    }
+  };
+
+  const showStatusOptions = () => {
+    // This can be changed back to bottomSheetRef.current?.expand() if you prefer the bottom sheet
+    Alert.alert(
+      'Update Your Status',
+      "Let your team know where you're working from today.",
+      [
+        { text: 'I am in office', onPress: () => handleStatusUpdate('in-office') },
+        { text: 'Work From Home', onPress: () => handleStatusUpdate('wfh') },
+        { text: 'Sick Leave', onPress: () => handleStatusUpdate('sick') },
+        { text: 'Out of Office', onPress: () => handleStatusUpdate('ooo') },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const getIconForType = (type: 'article' | 'kudo' | 'survey') => {
+    switch (type) {
+      case 'article':
+        return 'newspaper-outline';
+      case 'kudo':
+        return 'ribbon-outline';
+      case 'survey':
+        return 'stats-chart-outline';
+      default:
+        return 'flash-outline';
     }
   };
 
@@ -42,15 +83,40 @@ export default function HomeScreen() {
 
         <Card>
           <StyledText style={styles.cardTitle}>Office Check-in</StyledText>
-          <StyledText style={styles.cardSubtitle}>
-            Let your team know you've arrived.
-          </StyledText>
+          <StyledText style={styles.cardSubtitle}>Let your team know you've arrived.</StyledText>
           <StyledButton
-            title="I am in office"
-            onPress={handleCheckIn}
+            title="Update My Status"
+            onPress={showStatusOptions}
             loading={isCheckingIn}
             style={{ marginTop: 8 }}
           />
+        </Card>
+
+        <Card>
+          <StyledText style={styles.cardTitle}>What's Trending</StyledText>
+          {isTrendingLoading ? (
+            <ActivityIndicator style={{ marginVertical: 20 }} />
+          ) : (
+            trendingItems.map((item) => (
+              <Pressable
+                key={item.id}
+                style={({ pressed }) => [
+                  styles.trendingItem,
+                  { opacity: pressed ? 0.7 : 1 },
+                ]}
+                onPress={item.onPress}>
+                <TabBarIcon
+                  name={getIconForType(item.type)}
+                  color={accentColor}
+                  style={styles.trendingIcon}
+                />
+                <View style={{ flex: 1 }}>
+                  <StyledText style={styles.trendingTitle}>{item.title}</StyledText>
+                  <StyledText style={styles.trendingSubtitle}>{item.subtitle}</StyledText>
+                </View>
+              </Pressable>
+            ))
+          )}
         </Card>
 
         <Pressable onPress={() => router.push('/(tabs)/articles')} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
@@ -111,5 +177,24 @@ const styles = StyleSheet.create({
   },
   cardSubtitle: {
     opacity: 0.7,
+  },
+  trendingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(128,128,128,0.3)',
+  },
+  trendingIcon: {
+    marginRight: 16,
+  },
+  trendingTitle: {
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  trendingSubtitle: {
+    opacity: 0.7,
+    fontSize: 13,
+    marginTop: 2,
   },
 });

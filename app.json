@@ -1,52 +1,37 @@
 {
   "expo": {
-    "name": "PULSE",
-    "slug": "PULSE",
+    "name": "Pulse",
+    "slug": "pulse",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/react-logo.png",
-    "scheme": "pulse",
+    "icon": "./assets/images/AppIcon2.png",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/AppIcon2.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.PULSE",
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "bundleIdentifier": "com.customApps.attendanceTracker"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/react-logo.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/AppIcon2.png",
+        "backgroundColor": "#FFFFFF"
       },
-      "package": "com.customApps.attendanceTracker",
-      "googleServicesFile": "./google-services.json"
+      "package": "com.customApps.attendanceTracker"
     },
     "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/pulse-adaptive-icon.png"
-    },
-    "plugins": [
-      "@react-native-firebase/app",
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/pulse-adaptive-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
-        }
-      ]
-    ],
-    "experiments": {
-      "typedRoutes": true
+      "favicon": "./assets/images/favicon.png"
     },
     "extra": {
       "eas": {
-        "projectId": "3080f87c-2d9a-4427-94ca-5b8274aaaa5a"
+        "projectId": "3b14f843-a409-490f-9476-9d54146b8eee"
       }
-    },
-    "owner": "codestorage11"
+    }
   }
 }

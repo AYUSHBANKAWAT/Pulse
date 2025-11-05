@@ -1,7 +1,7 @@
 import { createUserWithEmailAndPassword, updateProfile } from '@react-native-firebase/auth';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { StyledButton } from '@/components/StyledButton';
 import { StyledDropdown, type DropdownOption } from '@/components/StyledDropdown';
@@ -27,6 +27,7 @@ export default function SignUpScreen() {
   const [baseLocation, setBaseLocation] = useState<DropdownOption | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const backgroundColor = useThemeColor({}, 'background');
+  const { height } = useWindowDimensions();
 
   const handleSignUp = () => {
     if (!email || !password || !fullName || !baseLocation) {
@@ -65,11 +66,10 @@ export default function SignUpScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.screen, { backgroundColor }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
+    <View style={[styles.screen, { backgroundColor }]}>
+      <ScrollView contentContainerStyle={[styles.container, { minHeight: height }]}>
+        <View style={[styles.header, { alignItems: 'center' }]}>
+          <Image source={require('@/assets/images/AppIcon2.png')} style={styles.logo} />
           <StyledText style={styles.title}>Create Account</StyledText>
           <StyledText style={styles.subtitle}>Let's get you started.</StyledText>
         </View>
@@ -99,27 +99,30 @@ export default function SignUpScreen() {
           </StyledText>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   container: {
-    flexGrow: 1,
     padding: 24,
-    justifyContent: 'space-between',
-  },
-  header: {
-    flex: 1,
     justifyContent: 'center',
   },
+  header: {
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
   form: {
-    flex: 2,
     justifyContent: 'center',
   },
   footer: {
-    paddingBottom: 16,
+    marginTop: 32,
+  },
+  logo: {
+    width: 250,
+    height: 250,
+    marginBottom: 1,
   },
   title: {
     fontSize: 40,
