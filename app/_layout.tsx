@@ -1,4 +1,5 @@
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import '@/firebaseConfig'; // Ensure Firebase is initialized first
 import { useNotifications } from '@/hooks/useNotifications';
 import { SplashScreen, Stack, router, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
