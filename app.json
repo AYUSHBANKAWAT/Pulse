@@ -4,6 +4,7 @@
     "slug": "pulse",
     "version": "1.0.0",
     "orientation": "portrait",
+     "newArchEnabled": true,
     "icon": "./assets/images/AppIcon2.png",
     "userInterfaceStyle": "automatic",
     "splash": {
